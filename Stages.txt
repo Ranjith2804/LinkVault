@@ -1,0 +1,22 @@
+Stage 0 — Bare metal .NET app (you know this)
+Single endpoint. Shorten a URL. Redirect. No DB yet, in-memory dictionary. Goal: Kestrel, routing, middleware pipeline, HttpContext. You can do this in your sleep now. Do it anyway — it's the foundation everything else sits on.
+Stage 1 — Data layer
+Add MSSQL + EF Core. Proper layered architecture: Controller → Service → Repository → DbContext. Migrations. No shortcuts. Goal: understand exactly what EF Core does to your objects, what SQL it generates, what a transaction boundary is.
+Stage 2 — Auth + security middleware
+Add JWT-based API keys. Middleware pipeline order matters here — authentication before authorization, rate limiting after auth so you can rate-limit per user. Goal: understand HttpContext.User, claims, middleware short-circuiting.
+Stage 3 — Caching layer
+Add Redis. Cache-aside pattern on redirects. Learn what a cache miss costs vs a cache hit. Intentionally cause a cache stampede and fix it. Goal: understand distributed cache vs in-process cache, TTL strategy, cache invalidation.
+Stage 4 — Async layer
+Add a message queue (RabbitMQ locally, Azure Service Bus in production). Every click event is published to the queue instead of written directly to DB. A separate Worker Service consumes it and writes to DB. Goal: understand why async decoupling exists, what happens when the consumer is down, dead-letter queues, idempotency.
+Stage 5 — Observability
+Add Serilog with structured logging, correlation IDs that flow through every layer including the queue consumer, OpenTelemetry traces, a Prometheus metrics endpoint. Goal: you should be able to answer "what happened to request X" purely from logs and traces without a debugger.
+Stage 6 — Load balancer + multiple instances
+Run 3 instances of your app behind Nginx (same as your URL shortener Stage 3 that you never finished — finish it now). Prove that your app is truly stateless. Move session state to Redis. Goal: understand what breaks when you scale horizontally and why statelessness is non-negotiable.
+Stage 7 — API Gateway
+Add YARP (Yet Another Reverse Proxy — a .NET-native API gateway). Route /api/v1 and /api/v2 through it. Add gateway-level rate limiting. Goal: understand the difference between what belongs in the gateway vs what belongs in the app.
+Stage 8 — Blob storage + background jobs
+Add Hangfire. Schedule a nightly job that generates a click analytics CSV, uploads it to Azure Blob Storage, and stores the download URL in the DB. Goal: understand job scheduling, blob storage as a data layer, large payload handling outside your DB.
+Stage 9 — IaC + CI/CD
+Write a docker-compose.yml that spins up every dependency (MSSQL, Redis, RabbitMQ, Nginx) with one command. Write a GitHub Actions pipeline: push code → run tests → build Docker image → push to registry → deploy. Goal: your entire system should be reproducible from zero with one command.
+Stage 10 — CDN + WAF (optional, production-only)
+Point Cloudflare in front. Cache redirect responses at edge. Enable WAF rules. Goal: understand what moves out of your app entirely when you add edge infrastructure.
